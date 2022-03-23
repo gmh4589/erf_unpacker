@@ -1,4 +1,5 @@
 #include <array.au3>
+#include <Binary.au3>
 
 $sFileName = FileOpenDialog ('Select file', " ", 'Aurora Engine ERF Files (*.erf)|All files (*.*)', 1+4)
 	If @error = 1 then Exit
@@ -12,13 +13,13 @@ ProgressOn('', 'Wait, files is unpacking...', '', (@DesktopWidth/2)-150, (@Deskt
 	If $iVer = '0x56312E30' Then
 			FileSetPos ($iFile, 16, 0)
 				$iFileCount = FileRead ($iFile, 4)
-				$iFileCount = Dec(StringTrimLeft (_Endian($iFileCount), 2))
+				$iFileCount = _BinaryToInt32($iFileCount)
 			FileSetPos ($iFile, 24, 0)
 				$iOff2Lst = FileRead ($iFile, 4)
-				$iOff2Lst = Dec(StringTrimLeft (_Endian($iOff2Lst), 2))
+				$iOff2Lst = _BinaryToInt32($iOff2Lst)
 			FileSetPos ($iFile, 28, 0)
 				$iERFLst = FileRead ($iFile, 4)
-				$iERFLst = Dec(StringTrimLeft (_Endian($iERFLst), 2))
+				$iERFLst = _BinaryToInt32($iERFLst)
 			FileSetPos ($iFile, $iOff2Lst, 0)
 			Local $FileNameArray[0], $FileExtArray[0]
 				For $i = 0 to $iFileCount
@@ -36,9 +37,9 @@ ProgressOn('', 'Wait, files is unpacking...', '', (@DesktopWidth/2)-150, (@Deskt
 			FileSetPos ($iFile, $iERFLst, 0)
 				For $j = 1 to $iFileCount
 					$data1 = FileRead ($iFile, 4)
-						$data1 = Dec(StringTrimLeft (_Endian($data1), 2))
+						$data1 = _BinaryToInt32($data1)
 					$data2 = FileRead ($iFile, 4)
-						$data2 = Dec(StringTrimLeft (_Endian($data2), 2))
+						$data2 = _BinaryToInt32($data2)
 					$c = FileGetPos($iFile)
 					FileSetPos ($iFile, $data1, 0)
 					$Data = FileRead ($iFile, $data2)
@@ -55,14 +56,14 @@ ProgressOn('', 'Wait, files is unpacking...', '', (@DesktopWidth/2)-150, (@Deskt
 			If $iVer = '0x56003200' Then
 					FileSetPos ($iFile, 16, 0)
 						$iFileCount = FileRead ($iFile, 4)
-						$iFileCount = Dec(StringTrimLeft (_Endian($iFileCount), 2))
+						$iFileCount = _BinaryToInt32($iFileCount)
 					FileSetPos ($iFile, 32, 0)
 					For $i = 0 to $iFileCount
 						$RName = FileRead ($iFile, 64)
 						$iOffs = FileRead ($iFile, 4)
-							$iOffs = Dec(StringTrimLeft (_Endian($iOffs), 2))
+							$iOffs = _BinaryToInt32($iOffs)
 						$iLong = FileRead ($iFile, 4)
-							$iLong = Dec(StringTrimLeft (_Endian($iLong), 2))
+							$iLong = _BinaryToInt32($iLong)
 						$c = FileGetPos($iFile)
 						FileSetPos ($iFile, $iOffs, 0)
 						$Data = FileRead ($iFile, $iLong)
@@ -85,21 +86,3 @@ ProgressSet(100, 'Done!')
 ProgressOff()	
 MsgBox (0, 'Message', 'Done!', 3)
 
-Func _Endian($Binary)
-	$Len = StringLen($Binary)
-		;MsgBox (0, '', $Binary)
-	If $Len < 6 or Mod($Len, 2) = 1 or StringIsXDigit(StringTrimLeft($Binary, 2)) = 0 Then
-		MsgBox (0, '', $Binary & " не является 16-ричным числом!")
-		Return
-	EndIf
-	
-	$BinaryArray = StringRegExp($Binary, '\N\N', 3)
-	$a = UBound($BinaryArray) - 1
-	$txt = FileOpen (@TempDir & '\bindata.txt', 10)
-	
-		For $i = $a to 1 Step -1
-			FileWrite ($txt, $BinaryArray[$i])
-		Next
-	FileClose ($txt)
-	Return ('0x' & FileReadLine (@TempDir & '\bindata.txt', 1))
-EndFunc
